@@ -41,11 +41,13 @@
     <Compile Include="crow_context.c" />
     <Compile Include="EmptyCSourceFile.c" />
     <Compile Include="crow_array.c" />
+    <Compile Include="crow_group.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="libcrow.h" />
     <None Include="Makefile" />
     <None Include="crow_array.h" />
+    <None Include="crow_group.h" />
   </ItemGroup>
   <ProjectExtensions>
     <MonoDevelop>

@@ -11,22 +11,30 @@ extern "C" {
 #define true 1
 #define false 0
 
+#define CROW_CACHE_SIZE_MAX 2048
+
 typedef uint8_t		crow_bool_t;
 typedef uint8_t		crow_byte_t;
 typedef int32_t		crow_int_t;
 
-#define IS_STRETCHED(msr) (msr.Value == 100 && msr.Units == CROW_UNIT_PERCENT)
+#define LOG_ERR			0x00
+#define LOG_INFO		0x01
+#define LOG_FULL		0xff
+
+#define LOG_LAYOUT		0x01
+#define LOG_DRAW		0x02
+#define LOG_CLIP		0x04
+#define LOG_ALL			0xff
+
 
 #ifdef DEBUG
-static const crow_byte_t LOG_ERR		0x00;
-static const crow_byte_t LOG_INFO		0x01;
-static const crow_byte_t LOG_FULL		0xff;
-static const crow_byte_t LOG_LAYOUT		0x01;
-static const crow_byte_t LOG_DRAW		0x02;
-#define LOG(level,logtype,...) fprintf (stdout, __VA_ARGS__)
+static crow_byte_t log_level	= LOG_FULL;
+static crow_byte_t log_type		= LOG_ALL;
+#define LOG(level,type,...) (log_level & level)&&(log_type & type) ? fprintf (stdout, __VA_ARGS__):true; 
 #else
 #define LOG
 #endif
+
 
 typedef struct _crow_array	crow_array_t;
 
@@ -60,6 +68,14 @@ typedef enum {
     CROW_UNIT_INHERIT
 } crow_unit_t;
 
+#define CROW_MEASURE_STRETCHED (crow_measure_t){100,CROW_UNIT_PERCENT}
+#define CROW_MEASURE_FIT (crow_measure_t){-1,CROW_UNIT_PIXEL}
+
+#define IS_STRETCHED(msr) (msr.value == 100 && msr.units == CROW_UNIT_PERCENT)
+#define IS_FIXED(msr) (msr.value > 0 && msr.units == CROW_UNIT_PIXEL)
+#define IS_FIT(msr) (msr.value == -1 && msr.units == CROW_UNIT_PIXEL)
+
+
 typedef enum {
 	CROW_TYPE_SIMPLE,
 	CROW_TYPE_CONTAINER,
@@ -80,14 +96,21 @@ typedef struct {
 } crow_rectangle_t;
 
 typedef struct {
-    crow_int_t Value;
-    crow_byte_t Units;
+    crow_int_t value;
+    crow_byte_t units;
 } crow_measure_t;
 
-struct _crow_object_t;
+typedef struct {
+	double r;
+	double g;
+	double b;
+	double a;
+} crow_color_t;
+
+struct _crow_object;
 
 typedef struct _crow_lqi {
-    struct _crow_object_t* graphicObj;
+    struct _crow_object* graphicObj;
     crow_layout_t LayoutType;
     crow_int_t LayoutingTries;
     crow_int_t DiscardCount;
@@ -107,32 +130,36 @@ typedef struct _crow_context
     crow_layout_queue_t*		MainQ;
     crow_layout_queue_t*		DiscarQ;
     crow_array_t*			clipping_pool;
+    struct _crow_object*		root;
 } crow_context_t;
 
 
-typedef crow_int_t	(*func_measure)(struct _crow_object_t* co, crow_byte_t lt);
-typedef crow_bool_t	(*func_update_layout)(struct _crow_object_t* co, crow_byte_t lt);
-typedef void		(*func_layout_changed)(struct _crow_object_t* co, crow_byte_t lt);
-typedef void		(*func_child_layout_changed)(struct _crow_object_t* co, crow_byte_t lt);
-typedef void		(*func_children_layout_constraints)(struct _crow_object_t* co, crow_byte_t* lt);
-typedef void		(*func_children_draw)(struct _crow_object_t* co, cairo_t* ctx);
+typedef crow_int_t	(*func_measure)(struct _crow_object* co, crow_byte_t lt);
+typedef crow_bool_t	(*func_update_layout)(struct _crow_object* co, crow_byte_t lt);
+typedef void		(*func_layout_changed)(struct _crow_object* co, crow_byte_t lt);
+typedef void		(*func_children_layout_constraints)(struct _crow_object* co, crow_byte_t* lt);
+typedef void		(*func_paint)(struct _crow_object* co, cairo_t* ctx);
 
-typedef struct _crow_object_t {
+typedef struct _crow_object {
 	crow_byte_t			obj_type;
 	crow_context_t*		context;
     crow_int_t			children_count;
-    struct _crow_object_t* parent;
-    struct _crow_object_t** children;
+    struct _crow_object* parent;
+    struct _crow_object** children;
+    struct _crow_object* largest_child;
+    struct _crow_object* tallest_child;
     crow_int_t			left;
     crow_int_t			top;
     crow_measure_t		width;
     crow_measure_t		height;
     crow_int_t			margin;
-    crow_size_t			MinimumSize;
-    crow_size_t			MaximumSize;
+    crow_size_t			min_size;
+    crow_size_t			max_size;
+    cairo_pattern_t*		background;
     crow_bool_t			visible;
     crow_bool_t			is_dirty;
     crow_bool_t			in_clipping_pool;
+    crow_bool_t			cache_enabled;
     cairo_region_t*		clipping;
     //unsigned char ArrangeChildren;
     crow_byte_t			registered_layoutings;
@@ -147,9 +174,10 @@ typedef struct _crow_object_t {
     func_measure						MeasureRawSize;
 	func_update_layout					UpdateLayout;
     func_layout_changed					OnLayoutChanged;
-    func_child_layout_changed			OnChildLayoutChanged;
+    func_layout_changed					OnChildLayoutChanged;
     func_children_layout_constraints	ChildrenLayoutingConstraints;
-    func_children_draw					OnDraw;
+    func_paint							UpdateCache;
+    func_paint							OnDraw;
 } crow_object_t;
 
 void		crow_lqi_enqueue				(crow_layout_queue_t* lq, crow_lqi_t* lqi);
@@ -169,7 +197,13 @@ crow_int_t	crow_object_get_client_y		(crow_object_t* go);
 crow_int_t	crow_object_get_client_width	(crow_object_t* go);
 crow_int_t	crow_object_get_client_height	(crow_object_t* go);
 
+void		crow_object_child_add			(crow_object_t* parent, crow_object_t* child);
+void		crow_object_child_remove		(crow_object_t* parent, crow_object_t* child);
+
+void		crow_object_init_cache			(crow_object_t* go);
+void		crow_object_update_cache		(crow_object_t* go, cairo_t* ctx);
 void		crow_object_draw				(crow_object_t* go, cairo_t* ctx);
+void		crow_object_paint				(crow_object_t* go, cairo_t* ctx);
 #ifdef  __cplusplus
 }
 #endif

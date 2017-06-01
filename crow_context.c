@@ -18,9 +18,14 @@ crow_context_t* crow_context_create () {
 
     return ctx;
 }
+
 void crow_context_destroy (crow_context_t* ctx) {
     free (ctx->MainQ);
     free (ctx);
+}
+
+void crow_context_set_root (crow_context_t* ctx, crow_object_t* root) {
+	ctx->root = root;
 }
 
 void crow_lqi_enqueue (crow_layout_queue_t* lq, crow_lqi_t* lqi) {
@@ -49,6 +54,7 @@ crow_lqi_t* crow_lqi_dequeue (crow_layout_queue_t* lq) {
 }
 
 void crow_context_process_clipping (crow_context_t* ctx) {
+	LOG(LOG_INFO, LOG_CLIP, "*** Process Clipping ***\n");
 	int i = 0;
 	for (i = 0; i < ctx->clipping_pool->count; i++) {
 		crow_object_t* go = (crow_object_t*)ctx->clipping_pool->elements[i];
@@ -63,7 +69,7 @@ void crow_context_process_clipping (crow_context_t* ctx) {
 }
 
 void crow_context_process_layouting (crow_context_t* ctx) {
-	printf ("process layouting\n");
+	LOG(LOG_INFO, LOG_LAYOUT, "*** Process Layouting ***\n");
     ctx->DiscarQ = (crow_layout_queue_t*)malloc(sizeof(crow_layout_queue_t));
     *(ctx->DiscarQ) = (crow_layout_queue_t){0, 0};
 
@@ -90,4 +96,9 @@ void crow_context_process_layouting (crow_context_t* ctx) {
     free (ctx->MainQ);
     ctx->MainQ = ctx->DiscarQ;
     ctx->DiscarQ = 0;
+}
+
+void crow_context_process_drawing (crow_context_t* ctx, cairo_t* cairo_ctx) {
+	LOG(LOG_INFO, LOG_DRAW, "*** Process Drawing ***\n");
+	crow_object_paint (ctx->root, cairo_ctx);
 }

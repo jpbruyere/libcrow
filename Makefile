@@ -1,11 +1,11 @@
 export PKG_CONFIG_PATH = /opt/mono/lib/pkgconfig
 CC = gcc # C compiler
-CFLAGS = -fPIC -Wall -Wextra -O2 -g 
+CFLAGS = -fPIC -Wall -Wextra -O2 -g -DDEBUG
 LDFLAGS = -shared  # linking flags
 RM = rm -f  # rm command
 TARGET_LIB = libcrow.so # target lib
 
-SRCS = crow_context.c crow_object.c crow_array.c# source files
+SRCS = crow_context.c crow_object.c crow_group.c crow_array.c# source files
 OBJS = $(SRCS:.c=.o)
 
 CFLAGS += `pkg-config --cflags --libs mono-2` 
