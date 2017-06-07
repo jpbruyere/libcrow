@@ -25,6 +25,7 @@
         <Command type="Build" command="make" workingdir="${ProjectDir}" pauseExternalConsole="True" />
         <Command type="Clean" command="make clean" workingdir="${ProjectDir}" />
         <Command type="AfterBuild" command="cp ${ProjectDir}/libcrow.so ${SolutionDir}/build/Debug/" />
+        <Command type="AfterBuild" command="cp ${ProjectDir}/libcrow.so ${SolutionDir}/MDEmbedTest/" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
@@ -42,6 +43,7 @@
     <Compile Include="EmptyCSourceFile.c" />
     <Compile Include="crow_array.c" />
     <Compile Include="crow_group.c" />
+    <Compile Include="tests.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="libcrow.h" />

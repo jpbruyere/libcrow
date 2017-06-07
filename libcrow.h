@@ -35,7 +35,6 @@ static crow_byte_t log_type		= LOG_ALL;
 #define LOG
 #endif
 
-
 typedef struct _crow_array	crow_array_t;
 
 typedef enum {
@@ -142,6 +141,7 @@ typedef void		(*func_paint)(struct _crow_object* co, cairo_t* ctx);
 
 typedef struct _crow_object {
 	crow_byte_t			obj_type;
+    crow_int_t			managedIdx;
 	crow_context_t*		context;
     crow_int_t			children_count;
     struct _crow_object* parent;
@@ -182,28 +182,37 @@ typedef struct _crow_object {
 
 void		crow_lqi_enqueue				(crow_layout_queue_t* lq, crow_lqi_t* lqi);
 
-crow_object_t* crow_object_create			();
-void		crow_object_destroy				(crow_object_t* go);
-void		crow_object_set_type			(crow_object_t* go, crow_type_t ct);
-void		crow_object_enqueue				(crow_object_t* go, crow_byte_t layoutType);
-void		crow_object_register_layouting	(crow_object_t* go, crow_byte_t layoutType);
-crow_int_t	crow_object_measure				(crow_object_t* go, crow_byte_t layoutType);
-crow_bool_t	crow_object_do_layout			(crow_object_t* go, crow_byte_t layoutType);
-void		crow_object_layout_changed		(crow_object_t* go, crow_byte_t layoutType);
-void		crow_object_register_clip		(crow_object_t* go, crow_rectangle_t r);
+crow_context_t*	crow_context_create				();
+void			crow_context_destroy			(crow_context_t* ctx);
+void			crow_context_set_root			(crow_context_t* ctx, crow_object_t* root);
+void			crow_context_process_clipping	(crow_context_t* ctx);
+void			crow_context_process_layouting	(crow_context_t* ctx);
+void			crow_context_process_drawing	(crow_context_t* ctx, cairo_t* cairo_ctx);
+void			crow_context_resize				(crow_context_t* ctx, int width, int height);
+
+
+crow_object_t* 	crow_object_create				();
+void			crow_object_destroy				(crow_object_t* go);
+void			crow_object_set_type			(crow_object_t* go, crow_type_t ct);
+void			crow_object_enqueue				(crow_object_t* go, crow_byte_t layoutType);
+void			crow_object_register_layouting	(crow_object_t* go, crow_byte_t layoutType);
+crow_int_t		crow_object_measure				(crow_object_t* go, crow_byte_t layoutType);
+crow_bool_t		crow_object_do_layout			(crow_object_t* go, crow_byte_t layoutType);
+void			crow_object_layout_changed		(crow_object_t* go, crow_byte_t layoutType);
+void			crow_object_register_clip		(crow_object_t* go, crow_rectangle_t r);
 crow_rectangle_t crow_object_get_client_rect(crow_object_t* go);
-crow_int_t	crow_object_get_client_x		(crow_object_t* go);
-crow_int_t	crow_object_get_client_y		(crow_object_t* go);
-crow_int_t	crow_object_get_client_width	(crow_object_t* go);
-crow_int_t	crow_object_get_client_height	(crow_object_t* go);
+crow_int_t		crow_object_get_client_x		(crow_object_t* go);
+crow_int_t		crow_object_get_client_y		(crow_object_t* go);
+crow_int_t		crow_object_get_client_width	(crow_object_t* go);
+crow_int_t		crow_object_get_client_height	(crow_object_t* go);
 
-void		crow_object_child_add			(crow_object_t* parent, crow_object_t* child);
-void		crow_object_child_remove		(crow_object_t* parent, crow_object_t* child);
+void			crow_object_child_add			(crow_object_t* parent, crow_object_t* child);
+void			crow_object_child_remove		(crow_object_t* parent, crow_object_t* child);
 
-void		crow_object_init_cache			(crow_object_t* go);
-void		crow_object_update_cache		(crow_object_t* go, cairo_t* ctx);
-void		crow_object_draw				(crow_object_t* go, cairo_t* ctx);
-void		crow_object_paint				(crow_object_t* go, cairo_t* ctx);
+void			crow_object_init_cache			(crow_object_t* go);
+void			crow_object_update_cache		(crow_object_t* go, cairo_t* ctx);
+void			crow_object_draw				(crow_object_t* go, cairo_t* ctx);
+void			crow_object_paint				(crow_object_t* go, cairo_t* ctx);
 #ifdef  __cplusplus
 }
 #endif

@@ -102,3 +102,12 @@ void crow_context_process_drawing (crow_context_t* ctx, cairo_t* cairo_ctx) {
 	LOG(LOG_INFO, LOG_DRAW, "*** Process Drawing ***\n");
 	crow_object_paint (ctx->root, cairo_ctx);
 }
+
+void crow_context_resize (crow_context_t* ctx, int width, int height) {
+	int i;
+	ctx->root->slot.width = width;
+	ctx->root->slot.height = height;
+	for (i=0;i<ctx->root->children_count;i++)
+		crow_object_register_layouting (ctx->root->children[i], CROW_LAYOUT_SIZE);	
+	crow_object_register_clip (ctx->root, ctx->root->slot);
+}

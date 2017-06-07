@@ -11,6 +11,7 @@ crow_object_t* crow_object_create (){
     crow_object_t* g = (crow_object_t*)malloc(sizeof(crow_object_t));
     memset (g, 0, sizeof(crow_object_t));
     g->clipping = cairo_region_create ();
+
     return g;
 }
 

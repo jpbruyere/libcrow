@@ -113,6 +113,7 @@ void crow_group_child_layout_changed (crow_object_t* child, crow_byte_t layoutTy
 }
 
 void crow_group_layout_changed (crow_object_t* go, crow_byte_t layoutType) {
+
 	crow_object_layout_changed (go, layoutType);
 
 	int i;
